@@ -1,5 +1,7 @@
-import torch
 import functools
+import re
+
+import torch
 
 
 class HoroscopeModel:
@@ -21,39 +23,43 @@ class HoroscopeModel:
     }
 
     def __init__(self):
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model, self.tokenizer = self.load_model()
 
-    @classmethod
-    @functools.lru_cache(maxsize=None)
-    def load_model(cls):
-        model = torch.load(cls.model_path)
-        tokenizer = torch.load(cls.tokenizer_path)
+    def load_model(self):
+        model = torch.load(self.model_path, map_location=self.device)
+        tokenizer = torch.load(self.tokenizer_path, map_location=self.device)
         model.resize_token_embeddings(len(tokenizer))
         return model, tokenizer
 
-    @staticmethod
-    def post_process(horoscope):
+    @classmethod
+    def post_process(cls, horoscope):
         # Removing special tokens
         horoscope = horoscope.replace("<|startoftext|>", "")
-
+        split_horoscope = horoscope.split(".")
         # Making sentences capitalized normally.
         capitalized_sentences = []
-        for sentence in horoscope.split("."):
-            sentence = sentence[0].capitalize() + sentence[1:]
-            sentence = sentence.strip()
-            capitalized_sentences.append(sentence)
-        horoscope = ". ".join(capitalized_sentences)
+        for i in range(len(split_horoscope)):
+            sentence = split_horoscope[i].strip()
+            if sentence:
+                if i == 0:
+                    # Users already know what zodiac they are, this is just for the model to know
+                    sentence = re.sub(f"({'|'.join(cls.zodiac_mapping.values())}), ", "", sentence)
+                sentence = sentence[0].upper() + sentence[1:]
+                capitalized_sentences.append(sentence)
+        horoscope = ". ".join(capitalized_sentences) + "."
 
         return horoscope
 
     def generate_horoscope(self, zodiac_id: int):
-        if torch.cuda.is_available():
-            generated = self.tokenizer(f"<|startoftext|>{self.zodiac_mapping.get(zodiac_id, 'aries')},", return_tensors="pt").input_ids.cuda()
-        else:
-            generated = self.tokenizer(f"<|startoftext|>{self.zodiac_mapping.get(zodiac_id, 'aries')},", return_tensors="pt").input_ids
-
+        generated = self.tokenizer(f"<|startoftext|>{self.zodiac_mapping.get(zodiac_id, 'aries')},", return_tensors="pt").input_ids
         horoscope = self.model.generate(generated, do_sample=True, top_k=30, max_length=200, top_p=0.96, temperature=0.8, num_return_sequences=1)
-        decoded = self.tokenizer.decode(horoscope, skip_special_tokens=True)
+        decoded = self.tokenizer.decode(horoscope[0], skip_special_tokens=True)
         post_processed = self.post_process(decoded)
 
         return post_processed
+
+
+@functools.lru_cache(maxsize=None)
+def get_model():
+    return HoroscopeModel()
