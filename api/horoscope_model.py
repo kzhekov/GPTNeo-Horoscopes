@@ -45,6 +45,7 @@ class HoroscopeModel:
                 if i == 0:
                     # Users already know what zodiac they are, this is just for the model to know
                     sentence = re.sub(f"({'|'.join(cls.zodiac_mapping.values())}), ", "", sentence)
+                    sentence = sentence.replace("Taurus: ", "")
                 sentence = sentence[0].upper() + sentence[1:]
                 capitalized_sentences.append(sentence)
         horoscope = ". ".join(capitalized_sentences) + "."
