@@ -1,7 +1,7 @@
-import functools
-import re
+from functools import lru_cache
+from re import sub
 
-import torch
+from torch import load, device, cuda
 
 
 class HoroscopeModel:
@@ -23,13 +23,13 @@ class HoroscopeModel:
     }
 
     def __init__(self):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = device("cuda:0" if cuda.is_available() else "cpu")
         self.model, self.tokenizer = self.load_model()
 
-    @functools.lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def load_model(self):
-        model = torch.load(self.model_path, map_location=self.device)
-        tokenizer = torch.load(self.tokenizer_path, map_location=self.device)
+        model = load(self.model_path, map_location=self.device)
+        tokenizer = load(self.tokenizer_path, map_location=self.device)
         model.resize_token_embeddings(len(tokenizer))
         return model, tokenizer
 
@@ -45,7 +45,7 @@ class HoroscopeModel:
             if sentence:
                 if i == 0:
                     # Users already know what zodiac they are, this is just for the model to know
-                    sentence = re.sub(f"({'|'.join(cls.zodiac_mapping.values())}), ", "", sentence)
+                    sentence = sub(f"({'|'.join(cls.zodiac_mapping.values())}), ", "", sentence)
                     sentence = sentence.replace("Taurus: ", "")
                 sentence = sentence[0].upper() + sentence[1:]
                 capitalized_sentences.append(sentence)
@@ -62,6 +62,6 @@ class HoroscopeModel:
         return post_processed
 
 
-@functools.lru_cache(maxsize=None)
+@lru_cache(maxsize=None)
 def get_model():
     return HoroscopeModel()
