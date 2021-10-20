@@ -26,6 +26,7 @@ class HoroscopeModel:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model, self.tokenizer = self.load_model()
 
+    @functools.lru_cache(maxsize=None)
     def load_model(self):
         model = torch.load(self.model_path, map_location=self.device)
         tokenizer = torch.load(self.tokenizer_path, map_location=self.device)
