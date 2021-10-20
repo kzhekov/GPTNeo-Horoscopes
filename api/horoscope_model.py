@@ -1,3 +1,4 @@
+import string
 from functools import lru_cache
 from re import sub
 
@@ -49,7 +50,10 @@ class HoroscopeModel:
                     sentence = sentence.replace("Taurus: ", "")
                 sentence = sentence[0].upper() + sentence[1:]
                 capitalized_sentences.append(sentence)
-        horoscope = ". ".join(capitalized_sentences) + "."
+        horoscope = ". ".join(capitalized_sentences)
+
+        if horoscope[-1] not in string.punctuation:
+            horoscope += "."
 
         return horoscope
 
