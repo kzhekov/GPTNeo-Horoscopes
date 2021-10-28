@@ -46,7 +46,8 @@ class HoroscopeModel:
                 if i == 0:
                     # Users already know what zodiac they are, this is only used for the model predictions
                     signs = cls.zodiac_mapping.values()
-                    sentence = sub(f"({'|'.join(signs)})(, |: {0,1})", "", sentence, flags=IGNORECASE)
+                    regex = f"({'|'.join(signs)})(, |: {0,1})"
+                    sentence = sub(regex, "", sentence, flags=IGNORECASE)
 
                 # Making sentences capitalized normally.
                 sentence = sentence[0].upper() + sentence[1:]
@@ -60,11 +61,14 @@ class HoroscopeModel:
 
     def generate_horoscope(self, zodiac_id: int):
         generated = self.tokenizer(f"<|startoftext|>{self.zodiac_mapping.get(zodiac_id, 'aries')},", return_tensors="pt").input_ids
-        horoscope = self.model.generate(generated, do_sample=True, top_k=30, max_length=200, top_p=0.96, temperature=0.8, num_return_sequences=1)
-        decoded = self.tokenizer.decode(horoscope[0], skip_special_tokens=True)
-        post_processed = self.post_process(decoded)
+        horoscopes = self.model.generate(generated, do_sample=True, top_k=30, max_length=200, top_p=0.96, temperature=0.8, num_return_sequences=3)
+        result = ""
+        for hor in horoscopes:
+            decoded = self.tokenizer.decode(hor, skip_special_tokens=True)
+            post_processed = self.post_process(decoded)
+            result += f"{post_processed} "
 
-        return post_processed
+        return result
 
 
 @lru_cache(maxsize=None)
