@@ -1,0 +1,70 @@
+async function post(url = "", data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url,
+        {
+            method: "POST", // *GET, POST, PUT, DELETE, etc.
+            mode: "cors", // no-cors, *cors, same-origin
+            cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: "omit", // include, *same-origin, omit
+            headers:
+                {
+                    "Content-Type": "application/json"
+                },
+            redirect: "follow", // manual, *follow, error
+            referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: JSON.stringify(data) // body data type must match "Content-Type" header
+        });
+    return response.json();
+}
+
+const cards = document.querySelectorAll(".card");
+const backButton = document.getElementById("back");
+cards.forEach((main_card) => {
+    main_card.addEventListener("click", () => {
+        window.scrollTo(0, 0);
+        if (!main_card.classList.contains("selected")) {
+            document.body.style.overflowY = "hidden";
+            cards.forEach((other_card) => {
+                if (main_card != other_card) {
+                    other_card.classList.toggle("hidden");
+                }
+            });
+            main_card.classList.toggle("selected");
+            setTimeout(function () {
+                var loading = document.createElement("div");
+                loading.innerHTML =
+                    '<div class="lds-ring" id="spinner"><div id="spinner"></div><div id="spinner"></div><div id="spinner"></div><div id="spinner"></div></div>';
+                main_card.appendChild(loading);
+                var horoscope = document.createElement("div");
+                horoscope.classList.add("card-content");
+                main_card.appendChild(horoscope);
+            }, 500);
+            post("https://gpt-horoscopes-gabvrcjbfq-uc.a.run.app/predict",
+                {
+                    horoscope_id: main_card.id
+                }).then((res) => {
+                loading = document.querySelector(".lds-ring");
+                $(loading).fadeOut(300);
+                horoscope = document.querySelector(".card-content");
+                horoscope.innerText = res.horoscope;
+                $(horoscope).hide().fadeIn(1000);
+                backButton.style.opacity = 1;
+                backButton.addEventListener("click", () => {
+                    if (backButton.style.opacity === "1") {
+                        cards.forEach((card) => {
+                            card.classList.remove("hidden", "selected");
+                        });
+                        const previousHoroscopes = document.querySelectorAll(
+                            ".card-content, .lds-ring"
+                        );
+                        previousHoroscopes.forEach((horoscope) => {
+                            horoscope.remove();
+                        });
+                        document.body.style.overflowY = "scroll";
+                        backButton.style.opacity = 0;
+                    }
+                });
+            });
+        }
+    });
+});
