@@ -5,12 +5,10 @@ from pydantic import BaseModel
 from horoscope_model import HoroscopeModel, get_model
 
 app = FastAPI()
-origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
