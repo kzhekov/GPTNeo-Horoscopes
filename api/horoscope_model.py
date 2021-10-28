@@ -1,6 +1,6 @@
 import string
 from functools import lru_cache
-from re import sub
+from re import sub, IGNORECASE
 
 from torch import load, device, cuda
 
@@ -39,15 +39,16 @@ class HoroscopeModel:
         # Removing special tokens
         horoscope = horoscope.replace("<|startoftext|>", "")
         split_horoscope = horoscope.split(".")
-        # Making sentences capitalized normally.
         capitalized_sentences = []
         for i in range(len(split_horoscope)):
             sentence = split_horoscope[i].strip()
             if sentence:
                 if i == 0:
-                    # Users already know what zodiac they are, this is just for the model to know
-                    sentence = sub(f"({'|'.join(cls.zodiac_mapping.values())}), ", "", sentence)
-                    sentence = sentence.replace("Taurus: ", "")
+                    # Users already know what zodiac they are, this is only used for the model predictions
+                    signs = cls.zodiac_mapping.values()
+                    sentence = sub(f"({'|'.join(signs)})(, |: {0,1})", "", sentence, flags=IGNORECASE)
+
+                # Making sentences capitalized normally.
                 sentence = sentence[0].upper() + sentence[1:]
                 capitalized_sentences.append(sentence)
         horoscope = ". ".join(capitalized_sentences)
