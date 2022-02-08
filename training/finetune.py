@@ -11,14 +11,15 @@ for logger in loggers:
 # torch.manual_seed(42)
 tokenizer = GPT2Tokenizer.from_pretrained("iocust/horos_gpt_neo", bos_token='<|startoftext|>',
                                           eos_token='<|endoftext|>', pad_token='<|pad|>')
-model = GPTNeoForCausalLM.from_pretrained("/content/drive/MyDrive/Horoscopes/models6/checkpoint-80000").cuda()
+# You can also use the checkpoint-80000 folder (unzipped) from the repo's releases
+model = GPTNeoForCausalLM.from_pretrained("iocust/horos_gpt_neo").cuda()
 model.resize_token_embeddings(len(tokenizer))
 train_model = False
 push_to_hf = False
 prebuilt_sentences = False
 
 if train_model:
-    descriptions = pd.read_csv('/content/drive/MyDrive/Horoscopes/horoscopes_all_clean.csv', delimiter="\n", header=None)[0]
+    descriptions = pd.read_csv('./input/horoscopes_all_clean.csv', delimiter="\n", header=None)[0]
     max_length = max([len(tokenizer.encode(description)) for description in descriptions])
 
 
@@ -43,7 +44,7 @@ if train_model:
     dataset = HoroscopeDataset(descriptions, tokenizer, max_length=max_length)
     train_size = int(0.9 * len(dataset))
     train_dataset, val_dataset = random_split(dataset, [train_size, len(dataset) - train_size])
-    training_args = TrainingArguments(output_dir='/content/drive/MyDrive/Horoscopes/models7/', num_train_epochs=5, logging_steps=1000, save_steps=20000,
+    training_args = TrainingArguments(output_dir='./training_output/checkpoints/', num_train_epochs=5, logging_steps=1000, save_steps=20000,
                                       per_device_train_batch_size=1, per_device_eval_batch_size=1,
                                       warmup_steps=100, weight_decay=0.01, logging_dir='./logs')
     Trainer(model=model, args=training_args, train_dataset=train_dataset,
