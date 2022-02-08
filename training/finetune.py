@@ -4,19 +4,22 @@ from torch.utils.data import Dataset, random_split
 from transformers import GPT2Tokenizer, TrainingArguments, Trainer, GPTNeoForCausalLM
 import logging
 
+# Setting up logging
 loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
 for logger in loggers:
     logger.setLevel(logging.CRITICAL)
-
-# torch.manual_seed(42)
-tokenizer = GPT2Tokenizer.from_pretrained("iocust/horos_gpt_neo", bos_token='<|startoftext|>',
+    
+train_model = False  # Whether to train the model or not
+push_to_hf = False  # If saving to your own huggingface repository
+train_val_split = 0.9  # Currently trains on 90% of the data, validates on 10%
+# This is a repository on Huggingface, model is downloaded automatically
+loading_directory = "iocust/horos_gpt_neo"
+# You can also use the checkpoint-80000 folder path (unzipped) from the repo's releases
+# for loading the tokenizer and the model instead of the repository.
+tokenizer = GPT2Tokenizer.from_pretrained(tansformers_repository, bos_token='<|startoftext|>',
                                           eos_token='<|endoftext|>', pad_token='<|pad|>')
-# You can also use the checkpoint-80000 folder (unzipped) from the repo's releases
-model = GPTNeoForCausalLM.from_pretrained("iocust/horos_gpt_neo").cuda()
+model = GPTNeoForCausalLM.from_pretrained(tansformers_repository).cuda()
 model.resize_token_embeddings(len(tokenizer))
-train_model = False
-push_to_hf = False
-prebuilt_sentences = False
 
 if train_model:
     descriptions = pd.read_csv('./input/horoscopes_all_clean.csv', delimiter="\n", header=None)[0]
@@ -42,7 +45,7 @@ if train_model:
 
 
     dataset = HoroscopeDataset(descriptions, tokenizer, max_length=max_length)
-    train_size = int(0.9 * len(dataset))
+    train_size = int(train_val_split * len(dataset))
     train_dataset, val_dataset = random_split(dataset, [train_size, len(dataset) - train_size])
     training_args = TrainingArguments(output_dir='./training_output/checkpoints/', num_train_epochs=5, logging_steps=1000, save_steps=20000,
                                       per_device_train_batch_size=1, per_device_eval_batch_size=1,
