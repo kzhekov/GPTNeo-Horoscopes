@@ -16,9 +16,9 @@ train_val_split = 0.9  # Currently trains on 90% of the data, validates on 10%
 loading_directory = "iocust/horos_gpt_neo"
 # You can also use the checkpoint-80000 folder path (unzipped) from the repo's releases
 # for loading the tokenizer and the model instead of the repository.
-tokenizer = GPT2Tokenizer.from_pretrained(tansformers_repository, bos_token='<|startoftext|>',
+tokenizer = GPT2Tokenizer.from_pretrained(loading_directory, bos_token='<|startoftext|>',
                                           eos_token='<|endoftext|>', pad_token='<|pad|>')
-model = GPTNeoForCausalLM.from_pretrained(tansformers_repository).cuda()
+model = GPTNeoForCausalLM.from_pretrained(loading_directory).cuda()
 model.resize_token_embeddings(len(tokenizer))
 
 if train_model:
